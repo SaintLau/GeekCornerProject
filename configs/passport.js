@@ -1,11 +1,10 @@
 const passport = require('passport');
-
-//Local auth using our database
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const LocalStrategy = require('passport-local');
 const User = require('../models/user-model');
 const bcrypt = require('bcryptjs');
 
-//Passport - Set the user in the session after login
+//Set the user in the session after login
 passport.serializeUser((loggedInUser, cb) => {
   cb(null, loggedInUser._id);
 });
@@ -42,6 +41,34 @@ passport.use(new LocalStrategy((username, password, next) => {
     next(null, foundUser);
   });
 }));
+
+//Passport - Google Strategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/api/auth/google/callback",
+    },
+    (accessToken, refreshToken, profile, done) => {
+      //The user got authenticated by user
+      User.findOne({ googleId: profile.id })
+        .then(user => {
+          if (user) {
+            //Authenticate and persist in session
+            done(null, user);
+            return;
+          }
+          User.create({ googleId: profile.id, username: profile.displayName })
+            .then(newUser => {
+               //Authenticate and persist in session
+              done(null, newUser);
+            })
+            .catch(err => done(err)); 
+        })
+        .catch(err => done(err)); 
+  }
+))
 
 
 

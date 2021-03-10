@@ -9,18 +9,19 @@ const userSchema = new Schema({
     unique: true
   },
   password: {
-    type: String,
-    required: [true, 'Password is required']
+    type: String
+  
   },
-
+  googleId: String,
   email: {
     type: String,
-    required: [true, 'Email is required'],
+  
     unique: true,
     trim: true
   },
   
   imageUrl: String,
+  favoriteAnimes: []
 
 })
 

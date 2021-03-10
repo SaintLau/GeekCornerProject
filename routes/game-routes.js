@@ -6,12 +6,21 @@ const mongoose = require('mongoose');
 const fileUpload = require('../configs/cloudinary');
 const axios = require('axios');
 
-//to test the code from postman
-router.get('/testAPI', (req, res) => {
-  
-  let data = 'fields name,category,platforms;\nwhere category = 0 & platforms = {48,6};';
+//to test the code from postman by name id
+router.post('/testAPI', (req, res) => {
+  let {fields, id} = req.body
+  let myId = id
+  if(fields === 'all') {
+    fields = 'fields *; '
+  }
+  if(id) {
+  //  id = 'where id = ' + myId + ';'
+    id = `where id = ${myId};`
+  }
+ // let data = 'fields name,category,platforms;\nwhere category = 0 & platforms = {48,6};';
+    let data = `${fields}${id}`
 
-  let config = {
+    let config = {
     method: 'post',
     url: 'https://api.igdb.com/v4/games',
     headers: { 
@@ -25,20 +34,92 @@ router.get('/testAPI', (req, res) => {
   axios(config).then((response) => {
     res.json(response.data);
   })
+});
+
+//to test by genre id
+router.post('/testAPI/genre', (req, res) => {
+  let {fields, id} = req.body
+  let myId = id
+  if(fields === 'all') {
+    fields = 'fields *; '
+  }
+  if(id) {
+    id = `where id = (${myId});`
+  }
+  
+  let data = `${fields}${id}`
+
+let config = {
+  method: 'post',
+  url: 'https://api.igdb.com/v4/genres',
+  headers: { 
+    'Client-ID': '5ztmok1qdrkq8a80yj0o1nlq72hg2u', 
+    'Authorization': 'Bearer 45gn9eihkqq1yok97jug91ftwk6s29', 
+    'Content-Type': 'text/plain', 
+    'Cookie': '__cfduid=d0c7a1ca6519d75de119915511532e8571614860870'
+  },
+  data : data
+};
+
+axios(config)
+.then(function (response) {
+  res.json(response.data);
 })
+.catch(function (error) {
+  console.log(error);
+});
 
-
+})
 
 //one route to get Games
     //Read
 
 router.get('/games', (req, res) => {
-    Games.find()
-    .then((allGamesFromDB) => {
-      res.status(200).json(allGamesFromDB); 
-    }).catch((error) => {
-      res.status(500).json(`Error occurred ${error}`);
-    })
+  let accessToken = '';
+  axios.post('https://id.twitch.tv/oauth2/token?client_id=5ztmok1qdrkq8a80yj0o1nlq72hg2u&client_secret=pdrw67vaq2u063gk5zpgavs03pbw44&grant_type=client_credentials')
+  .then(response => {
+    console.log(response.data.access_token)
+    accessToken = response.data.access_token
+
+
+let config = {
+  method: 'post',
+  url: 'https://api.igdb.com/v4/games',
+  headers: { 
+    'Client-ID': '5ztmok1qdrkq8a80yj0o1nlq72hg2u', 
+    'Authorization': `Bearer ${accessToken}`, 
+    'Accept': 'application/json'
+  },
+  data : 'fields name,category,cover,genres;'
+};
+
+axios(config)
+.then( (response) => {
+  res.json(response.data);
+})
+.catch( (error) => {
+  console.log(error);
+});
+
+
+
+  })
+  .catch(error => {
+    console.log(error)
+  })
+
+
+
+
+
+
+
+    // Games.find()
+    // .then((allGamesFromDB) => {
+    //   res.status(200).json(allGamesFromDB); 
+    // }).catch((error) => {
+    //   res.status(500).json(`Error occurred ${error}`);
+    // })
 });
 
 router.post('/games', (req, res) => {

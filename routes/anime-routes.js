@@ -4,9 +4,50 @@ const router = express.Router();
 const Anime = require('../models/anime-model');
 const mongoose = require('mongoose');
 const fileUpload = require('../configs/cloudinary');
+const Kitsu = require('kitsu') 
+const User = require('../models/user-model.js')
+const api = new Kitsu()
 
 //one route to get Anime - the list with all, so the route will be animes
     //Read
+router.get('/animes', (req, res) => {
+     
+      api.get('anime')
+       .then(response => { 
+            res.json(response.data)
+        })
+       .catch(error => { 
+           console.log(error)
+        })
+
+ })
+
+ router.put('/animes/favorite/:id', (req, res) => {
+     const animeId = req.params.id;
+     const userId = req.user._id;
+     let existingFavoriteAnimes = [];
+     User.findById(userId).then((userFromDB) => {
+        existingFavoriteAnimes = userFromDB.favoriteAnimes;  
+        if (existingFavoriteAnimes.indexOf(animeId) > -1) {
+            existingFavoriteAnimes.splice(existingFavoriteAnimes.indexOf(animeId), 1);
+        } else {
+            existingFavoriteAnimes = existingFavoriteAnimes.concat(animeId)
+        }
+
+        User.findByIdAndUpdate(userId,  { favoriteAnimes: existingFavoriteAnimes }, { new: true }).then((updatedUser) => {
+            res.status(200).json(updatedUser.favoriteAnimes); 
+        })
+     })
+ })
+
+ router.get('/animes/user', (req, res) => {
+    const userId = req.user._id;
+    User.findById(userId).then((userFromDB) => {
+        res.status(200).json(userFromDB.favoriteAnimes); 
+    });
+ });
+
+
 router.get('/animes', (req, res) => {
     Anime.find()
     .then((allAnimesFromDB) => {
@@ -16,7 +57,14 @@ router.get('/animes', (req, res) => {
     })
 });
 
+
+//create
 router.post('/animes', (req, res) => {
+   
+   //api.create('post', {
+   //    content: ''   -> on doc they have 'some content'
+   //})
+   
     const { title, description, imageUrl } = req.body;
 
     if (!title || !description || !imageUrl) {
@@ -51,7 +99,9 @@ router.post('/animes', (req, res) => {
 
 //delete an anime
 router.delete('/animes/:id',(req, res) => {
-  Anime.findByIdAndRemove(req.params.id)
+  // api.remove('post', 1) sendo que um ha-de ser o id
+  
+    Anime.findByIdAndRemove(req.params.id)
   .then(() => {
     res.status(200).json(`Anime with id ${req.params.id} was deleted`);
   }).catch((error) => {
@@ -61,21 +111,24 @@ router.delete('/animes/:id',(req, res) => {
 
 //get an anime from id
 router.get('/animes/:id', (req, res) => {
-  //validation is the if
-  if(!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    res.status(400).json('Specified id is not valid');
-    return;
-  }
-  Anime.findById(req.params.id)
-  .then((theAnimeFromDB) => {
-  res.status(200).json(theAnimeFromDB);
-}).catch((error) => {
-  res.status(500).json(`Error occurred ${error}`);
-});
+    api.get(`anime/${req.params.id}`)
+    .then(response => { 
+         res.json(response.data)
+     })
+    .catch(error => { 
+        console.log(error)
+     })
 })
 
 //update - use id because we want to know what Anime will be update
 router.put('/animes/:id', (req, res) => {
+   
+  // api.update ('posts', {
+  //     id: '',
+  //     content: ''
+  //  }
+  // }) usei empty strings, no exemplo tem '1' e 'new content'
+   
     const animeWithNewData = req.body;
 
     Anime.findByIdAndUpdate(req.params.id, animeWithNewData)

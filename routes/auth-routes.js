@@ -6,10 +6,11 @@ const passport = require('passport');
 
 //Signup
 router.post('/signup', (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
   //Server side validation on empty fields
-  if (username === '' || password === '') {
-    res.state(400).json('missing fields')
+
+  if (username === '' || email === '' || password === '') {
+    res.status(400).json('missing fields')
     return;
   }
   //Server side validation on password constrain
@@ -22,7 +23,7 @@ router.post('/signup', (req, res) => {
   User.findOne({username: username})
     .then((user) => {
       if (user) {
-        res.status(400).json('user name already exists');
+        res.status(400).json('username already exists');
         return;
       }
       //Create the user
@@ -31,10 +32,12 @@ router.post('/signup', (req, res) => {
       const hashPassword = bcrypt.hashSync(password, salt);
       User.create({
         username,
+        email,
         password: hashPassword
       }).then((response) => {
-        res.status(200).json(response)
+        res.status(200).json({username: response.username, email: response.email, _id: response._id}) //to not have a breach in security
       }).catch((error) => {
+        res.status(500).json(error)
         //.code is mongoose validation error
         if (error.code === 11000) {
           res.status(500).json('username should be unique')
@@ -43,7 +46,7 @@ router.post('/signup', (req, res) => {
     });
 });
 
-//LOGIN - where things get tricky because we use passport and sometimes is way to many copy-past
+//LOGIN
 
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, theUser, failureDetails) => {
@@ -83,5 +86,26 @@ router.get('/loggedin', (req, res) =>{
   }
   res.status(200).json({});
 });
+
+
+//Route that will be called from front-end for google authentication
+router.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  })
+);
+
+//Route that will be called from the google servers
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    successRedirect: `${process.env.CLIENT_HOSTNAME}/feed`,
+    failureRedirect: `${process.env.CLIENT_HOSTNAME}/login`
+  })
+);
 
 module.exports = router;
