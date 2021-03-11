@@ -12,13 +12,36 @@ const api = new Kitsu()
     //Read
 router.get('/animes', (req, res) => {
      
-      api.get('anime')
+      api.get('anime', {
+          params: {
+          page: {
+            limit: 20,
+            offset: 700
+          }
+        }
+      })
        .then(response => { 
             res.json(response.data)
         })
        .catch(error => { 
            console.log(error)
         })
+
+ })
+router.get('/animes/search', (req, res) => {     
+       api.get('anime', {
+           params: {
+             filter: {
+                 text: ''
+             },
+         }
+       })
+        .then(response => { 
+             res.json(response.data)
+         })
+        .catch(error => { 
+            console.log(error)
+         })
 
  })
 

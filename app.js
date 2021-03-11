@@ -55,9 +55,9 @@ app.use(session({
   saveUninitialized: true,
   resave: false,
   cookie: {
-    sameSite: 'none', //true, //the requester is on the same domain
-    secure: true,//false, //not using https
-    httpOnly: false, //true, //site on only on http
+    sameSite: true, //'none', //the requester is on the same domain
+    secure: false, //true,//false, //not using https
+    httpOnly: true, //false, true, //site on only on http
     maxAge: 60000 //coolie time to live
   },
   rolling: true //session gets refreshed
@@ -84,6 +84,8 @@ app.use(
 //     origin: [process.env.client_id]
 //})
 
+
+//Express view engine setup
 
 
 
